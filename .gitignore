@@ -1,0 +1,51 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Environment variable files
+.env
+*.env
+
+# Logs
+logs/
+*.log
+
+# Raw log files
+raw_wazuh_suricata.log
+
+# Unit test cache
+*.pytest_cache/
+.pytest_cache/
+.cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Editor & OS-specific
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# System backup files
+*~
+*.bak
+*.swp
+*.swo

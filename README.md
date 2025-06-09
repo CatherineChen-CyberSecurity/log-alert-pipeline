@@ -25,6 +25,7 @@ log-alert-pipeline/
 │   ├── test_log_parser.py           # Unit tests for the log parsing module.
 │   ├── test_alert_analyzer.py       # Unit tests for the alert analysis logic.
 │   └── test_email_notifier.py       # Unit tests for the email notification module.
+├── .gitignore                       # Specifies intentionally untracked files to ignore by Git.
 ├── requirements.txt                 # Python package dependencies.
 └── README.md                        # Project overview documentation.
 ```
