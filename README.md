@@ -5,24 +5,26 @@ This Python project is designed to enhance your security monitoring capabilities
 ## Project Structure
 The log-alert-pipeline project is organized into a clear and logical structure to promote maintainability and scalability. Below is an overview of the main directories and files:
 
+```
 log-alert-pipeline/
 ├── src/
-│   ├── __init__.py                     # Marks the 'src' directory as a Python package.
-│   ├── main.py                         # The main execution file; orchestrates the flow of the application.
-│   ├── log_parser.py                   # Responsible for parsing Wazuh/Suricata JSON logs and extracting critical fields.
-│   ├── alert_analyzer.py               # Contains the core logic for filtering and identifying suspicious activities.
-│   ├── email_notifier.py               # Handles the sending of email alerts to specified recipients.
-│   └── utils.py                        # A collection of utility functions, such as date/time handling and logging configurations.
+│   ├── __init__.py                  # Marks the 'src' directory as a Python package.
+│   ├── main.py                      # The main execution file; orchestrates the flow of the application.
+│   ├── log_parser.py                # Responsible for parsing Wazuh/Suricata JSON logs and extracting critical fields.
+│   ├── alert_analyzer.py            # Contains the core logic for filtering and identifying suspicious activities.
+│   ├── email_notifier.py            # Handles the sending of email alerts to specified recipients.
+│   └── utils.py                     # Utility functions, such as date/time handling and logging configurations.
 ├── config/
-│   ├── .env                            # Configuration file for general settings (e.g., email server, recipient list, log file paths, alert thresholds).
-│   └── rules.json                      # Defines the detection rules for alerts (optional, if not hardcoded in alert_analyzer).
+│   ├── .env                         # General settings (e.g., email server, recipient list, log paths, thresholds). **DO NOT COMMIT**
+│   └── rules.json                   # Defines detection rules for alerts (optional).
 ├── logs/
-│   ├── app.log                         # Application's own operational logs.
-│   └── raw_wazuh_suricata.log          # Placeholder for raw Wazuh/Suricata logs to be processed.
+│   ├── app.log                      # Application's operational logs.
+│   └── raw_wazuh_suricata.log       # Placeholder for raw logs to be processed.
 ├── tests/
-│   ├── __init__.py                     # Marks the 'tests' directory as a Python package.
-│   ├── test_log_parser.py              # Unit tests for the log parsing module.
-│   ├── test_alert_analyzer.py          # Unit tests for the alert analysis logic.
-│   └── test_email_notifier.py          # Unit tests for the email notification module.
-├── requirements.txt                    # Lists all Python package dependencies required for the project.
-└── README.md                           # This documentation file, providing an overview of the project.
+│   ├── __init__.py                  # Marks the 'tests' directory as a Python package.
+│   ├── test_log_parser.py           # Unit tests for the log parsing module.
+│   ├── test_alert_analyzer.py       # Unit tests for the alert analysis logic.
+│   └── test_email_notifier.py       # Unit tests for the email notification module.
+├── requirements.txt                 # Python package dependencies.
+└── README.md                        # Project overview documentation.
+```
