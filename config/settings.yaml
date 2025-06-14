@@ -1,0 +1,13 @@
+wazuh:
+  host: "localhost"  # Replace with your Wazuh Indexer IP
+  port: 9200
+  username: "admin"  # Replace with your username
+  password: "SecretPassword"  # Replace with your password
+  
+scheduler:
+  interval_minutes: 1
+  alert_fetch_size: 20
+  
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
