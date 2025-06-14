@@ -1,0 +1,17 @@
+rules:
+  - rule_id: 1
+    rule_name: "Alert 1"
+    rule_description: "Alert 1 description"
+    rule_actions:
+      - action: "email"
+        email: "admin@example.com"
+    filter:
+      - field: "data.src_ip"
+        operator: "eq"
+        value: "172.21.0.3"
+      - field: "data.dest_ip"
+        operator: "eq"
+        value: "172.21.0.4"
+      - field: "rule.level"
+        operator: "gt"
+        value: 3

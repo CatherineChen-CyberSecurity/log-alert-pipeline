@@ -11,12 +11,14 @@ import logging
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import List, Dict, Any, Optional
 
 # Add the src directory to the Python path
 sys.path.append(str(Path(__file__).parent))
 
 from wazuh_client import WazuhClient
 from log_parser import LogParser
+from alert_analyzer import AlertAnalyzer
 
 
 class WazuhDataFetcher:
@@ -38,7 +40,8 @@ class WazuhDataFetcher:
         self.logger = logging.getLogger(__name__)
         self.parser = LogParser()
         self.last_request_time = None
-        
+        self.analyzer = AlertAnalyzer()
+
     def _load_config(self, config_path: str) -> dict:
         """
         Load configuration from YAML file
@@ -113,9 +116,9 @@ class WazuhDataFetcher:
             password=wazuh_config.get('password')
         )
     
-    def fetch_and_print_ids(self):
+    def process(self):
         """
-        Fetch Wazuh alert data and print IDs
+        Fetch Wazuh alert data and process
         This method is called every 5 minutes
         """
         try:
@@ -130,18 +133,8 @@ class WazuhDataFetcher:
                 alerts = self.client.get_alerts_by_time_range(self.last_request_time, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z"), size=fetch_size)
             
             # Parse alerts
-            alert_events = self.parser.extract_hit_records(alerts)
-            
-            # Print alerts
-            for alert_event in alert_events:
-                # 安全地获取字段，处理可能不存在的字段
-                timestamp = alert_event.get('_source', {}).get('timestamp', 'N/A')
-                severity = alert_event.get('_source', {}).get('data', {}).get('alert', {}).get('severity', 'N/A')
-                src_ip = alert_event.get('_source', {}).get('data', {}).get('src_ip', 'N/A')
-                dest_ip = alert_event.get('_source', {}).get('data', {}).get('dest_ip', 'N/A')
-                rule = alert_event.get('_source', {}).get('rule', {}).get('description', 'N/A')
-                print(f"timestamp: {timestamp} level: {severity} src_ip: {src_ip} dest_ip: {dest_ip} rule: {rule}")
-                
+            hits = self.parser.extract_hit_records(alerts)
+            self.analyzer.analyze_alert(hits)
         except Exception as e:
             self.logger.error(f"Error fetching alert IDs: {e}")
             print(f"Error: {e}")
@@ -157,10 +150,10 @@ class WazuhDataFetcher:
         print("Press Ctrl+C to stop")
         
         # Schedule the job
-        schedule.every(interval).minutes.do(self.fetch_and_print_ids)
+        schedule.every(interval).minutes.do(self.process)
         
         # Run the first fetch immediately
-        self.fetch_and_print_ids()
+        self.process()
         
         # Keep the scheduler running
         try:
@@ -176,7 +169,7 @@ class WazuhDataFetcher:
         Run the data fetch only once (for testing)
         """
         self.logger.info("Running single data fetch")
-        self.fetch_and_print_ids()
+        self.process()
 
 
 def main():
