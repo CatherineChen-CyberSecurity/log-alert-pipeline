@@ -15,6 +15,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 python main.py
 ```
+
 ```
 log-alert-pipeline/
 ├── src/
@@ -22,16 +23,14 @@ log-alert-pipeline/
 │   ├── main.py                      # The main execution file; orchestrates the flow of the application.
 │   ├── wazuh_client.py              # Wazuh data retrieval
 │   ├── alert_analyzer.py            # Contains the core logic for filtering and identifying suspicious activities.
+│   ├── log_parser.py                # Parser wazuh data.
 │   ├── email_notifier.py            # Handles the sending of email alerts to specified recipients.
 │   ├── rule_engine.py               # Rule engine
 │   └── utils.py                     # Utility functions, such as date/time handling and logging configurations.
 ├── config/
-│   ├── .env                         # General settings (e.g., email server, recipient list, log paths, thresholds). **DO NOT COMMIT**
 │   ├── settings.yaml                # Main configuration
 │   ├── rules.yaml                   # Analysis rules
 │   └── email_template.html          # Email template
-├── data/
-│   └── state.json                   # Processing state records
 ├── logs/
 │   ├── app.log                      # Application's operational logs.
 │   └── error.log                    # Error logs
@@ -49,6 +48,5 @@ log-alert-pipeline/
 ├── .dockerignore                    # Docker ignore file
 ├── requirements.txt                 # Python package dependencies.
 └── README.md                        # Project overview documentation.
-└── run.py                           # Startup script
 ```
 
