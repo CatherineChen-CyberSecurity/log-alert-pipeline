@@ -223,10 +223,10 @@ def main():
         
         # --help print the help message
         if len(sys.argv) > 1 and sys.argv[1] == "--help":
-            print("Usage: python main.py [--once]")
+            print("Usage: python main.py [--once] [--export <file_name>]")
+            print("  --help: Print this help message")
             print("  --once: Run the data fetch only once")
             print("  --export: Export the data to a file")
-            print("  --help: Print this help message")
             sys.exit(0)
         
         # --export export the data to a file
