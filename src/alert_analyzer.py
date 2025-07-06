@@ -50,7 +50,8 @@ class AlertAnalyzer:
         if not all([field, operator]):
             return False
         
-        actual_value = self._get_nested_value(hit, field)
+        value = hit.get('_source', hit)
+        actual_value = self._get_nested_value(value, field)
         
         # Handle different operators
         try:

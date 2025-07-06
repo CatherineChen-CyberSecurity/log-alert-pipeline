@@ -4,6 +4,7 @@ Wazuh Data Fetcher - Scheduled data retrieval framework
 This module provides a framework for fetching Wazuh alert data every 5 minutes
 """
 
+import json
 import schedule
 import time
 import yaml
@@ -41,6 +42,9 @@ class WazuhDataFetcher:
         self.parser = LogParser()
         self.last_request_time = None
         self.analyzer = AlertAnalyzer()
+        self.export_file = False
+        self.export_file_name = "alert"
+        self.export_file_path = "output"
 
     def _load_config(self, config_path: str) -> dict:
         """
@@ -134,7 +138,17 @@ class WazuhDataFetcher:
             
             # Parse alerts
             hits = self.parser.extract_hit_records(alerts)
-            self.analyzer.analyze_alert(hits)
+            matched_alerts = self.analyzer.analyze_alert(hits)
+            self.logger.info(f"Matched alerts: {matched_alerts}")
+
+            # Export the data to a file
+            if self.export_file:
+                output_dir = Path(self.export_file_path)
+                output_dir.mkdir(parents=True, exist_ok=True)
+                file_path = output_dir / f"{self.export_file_name}.json"
+                with open(file_path, 'w') as f:
+                    json.dump(matched_alerts, f)
+                self.logger.info(f"Exported alerts to {file_path}")
         except Exception as e:
             self.logger.error(f"Error fetching alert IDs: {e}")
             print(f"Error: {e}")
@@ -171,7 +185,6 @@ class WazuhDataFetcher:
         self.logger.info("Running single data fetch")
         self.process()
 
-
 def main():
     """
     Main entry point
@@ -182,9 +195,28 @@ def main():
         
         # Initialize the fetcher
         fetcher = WazuhDataFetcher()
+        run_once = False
         
-        # Check if we want to run once or continuously
+        # --help print the help message
+        if len(sys.argv) > 1 and sys.argv[1] == "--help":
+            print("Usage: python main.py [--once]")
+            print("  --once: Run the data fetch only once")
+            print("  --export: Export the data to a file")
+            print("  --help: Print this help message")
+            sys.exit(0)
+        
+        # --export export the data to a file
+        if len(sys.argv) > 1 and sys.argv[1] == "--export":
+            if len(sys.argv) > 2:
+                fetcher.export_file_name = sys.argv[2]
+            fetcher.export_file = True
+            run_once = True
+            
+        # --once run the data fetch only once
         if len(sys.argv) > 1 and sys.argv[1] == "--once":
+            run_once = True
+
+        if run_once:
             fetcher.run_once()
         else:
             fetcher.start_scheduler()

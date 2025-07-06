@@ -8,10 +8,10 @@ rules:
     filter:
       - field: "data.src_ip"
         operator: "eq"
-        value: "172.21.0.3"
+        value: "172.21.0.4"
       - field: "data.dest_ip"
         operator: "eq"
-        value: "172.21.0.4"
+        value: "172.21.0.10"
       - field: "rule.level"
         operator: "gt"
         value: 3
