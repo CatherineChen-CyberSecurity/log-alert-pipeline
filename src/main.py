@@ -4,6 +4,7 @@ Wazuh Data Fetcher - Scheduled data retrieval framework
 This module provides a framework for fetching Wazuh alert data every 5 minutes
 """
 
+import csv
 import json
 import schedule
 import time
@@ -12,7 +13,7 @@ import logging
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 
 # Add the src directory to the Python path
 sys.path.append(str(Path(__file__).parent))
@@ -43,7 +44,7 @@ class WazuhDataFetcher:
         self.last_request_time = None
         self.analyzer = AlertAnalyzer()
         self.export_file = False
-        self.export_file_name = "alert"
+        self.export_file_name = "alert.json"
         self.export_file_path = "output"
 
     def _load_config(self, config_path: str) -> dict:
@@ -143,16 +144,39 @@ class WazuhDataFetcher:
 
             # Export the data to a file
             if self.export_file:
-                output_dir = Path(self.export_file_path)
-                output_dir.mkdir(parents=True, exist_ok=True)
-                file_path = output_dir / f"{self.export_file_name}.json"
-                with open(file_path, 'w') as f:
-                    json.dump(matched_alerts, f)
-                self.logger.info(f"Exported alerts to {file_path}")
+                self.export_matched_alerts(matched_alerts)
         except Exception as e:
             self.logger.error(f"Error fetching alert IDs: {e}")
             print(f"Error: {e}")
-    
+
+    def export_matched_alerts(self, matched_alerts: List[Tuple[Dict[str, Any], Dict[str, Any]]]):
+        """
+        Export matched alerts to a file
+        """
+        output_dir = Path(self.export_file_path)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        file_path = output_dir / f"{self.export_file_name}"
+
+        expanded_matched_alerts = []
+        for matched_alert in matched_alerts:
+            expanded_matched_alerts.append({
+                "alert_rule": matched_alert[1],
+                "raw_data": matched_alert[0]
+            })
+
+        if self.export_file_name.endswith(".json"):
+            with open(file_path, 'w') as f:
+                json.dump(expanded_matched_alerts, f)
+        
+        if self.export_file_name.endswith(".csv"):
+            with open(file_path, 'w') as f:
+                writer = csv.writer(f)
+                writer.writerow(["alert_rule", "raw_data"])
+                for matched_alert in expanded_matched_alerts:
+                    writer.writerow([matched_alert["alert_rule"], matched_alert["raw_data"]])
+
+        self.logger.info(f"Exported alerts to {file_path}")
+
     def start_scheduler(self):
         """
         Start the scheduled data fetching
@@ -209,6 +233,9 @@ def main():
         if len(sys.argv) > 1 and sys.argv[1] == "--export":
             if len(sys.argv) > 2:
                 fetcher.export_file_name = sys.argv[2]
+                if not fetcher.export_file_name.endswith(".json") and not fetcher.export_file_name.endswith(".csv"):
+                    print(f"Export file name must not end with .json or .csv")
+                    sys.exit(1)
             fetcher.export_file = True
             run_once = True
             
