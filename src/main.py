@@ -146,11 +146,11 @@ class WazuhDataFetcher:
             
             self.logger.info(f"Fetching {fetch_size} recent alerts...")
             if self.last_request_time is None:
-                self.last_request_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
                 alerts = self.client.get_recent_alerts(size=fetch_size)
-            else:
                 self.last_request_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+            else:
                 alerts = self.client.get_alerts_by_time_range(self.last_request_time, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z"), size=fetch_size)
+                self.last_request_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
             
             # Parse alerts
             hits = self.parser.extract_hit_records(alerts)

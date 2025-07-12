@@ -6,8 +6,15 @@ wazuh:
   
 scheduler:
   interval_minutes: 1
-  alert_fetch_size: 20
+  alert_fetch_size: 2000
   
 logging:
   level: "INFO"
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+smtp:
+  server: "smtp.mailgun.org"
+  port: 587
+  user: "your_email@example.com"
+  password: "your_email_password"
+  from_email: "your_email@example.com"

@@ -49,3 +49,4 @@ Thumbs.db
 *.bak
 *.swp
 *.swo
+config/settings.yaml
