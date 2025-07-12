@@ -181,7 +181,8 @@ class WazuhDataFetcher:
         """
         output_dir = Path(self.export_file_path)
         output_dir.mkdir(parents=True, exist_ok=True)
-        file_path = output_dir / f"{self.export_file_name}"
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        file_path = output_dir / f"{timestamp}_{self.export_file_name}"
 
         expanded_matched_alerts = []
         for matched_alert in matched_alerts:
