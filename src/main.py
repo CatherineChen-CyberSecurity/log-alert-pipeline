@@ -21,6 +21,7 @@ sys.path.append(str(Path(__file__).parent))
 from wazuh_client import WazuhClient
 from log_parser import LogParser
 from alert_analyzer import AlertAnalyzer
+from notifier import EmailNotifier
 
 
 class WazuhDataFetcher:
@@ -46,6 +47,7 @@ class WazuhDataFetcher:
         self.export_file = False
         self.export_file_name = "alert.json"
         self.export_file_path = "output"
+        self.notifier = self._initialize_notifier()
 
     def _load_config(self, config_path: str) -> dict:
         """
@@ -121,6 +123,19 @@ class WazuhDataFetcher:
             password=wazuh_config.get('password')
         )
     
+    def _initialize_notifier(self) -> Optional[EmailNotifier]:
+        """Initialize the email notifier if configured."""
+        if 'smtp' in self.config:
+            smtp_config = self.config['smtp']
+            return EmailNotifier(
+                smtp_server=smtp_config.get('server'),
+                smtp_port=smtp_config.get('port'),
+                smtp_user=smtp_config.get('user'),
+                smtp_password=smtp_config.get('password'),
+                from_email=smtp_config.get('from_email')
+            )
+        return None
+
     def process(self):
         """
         Fetch Wazuh alert data and process
@@ -140,7 +155,18 @@ class WazuhDataFetcher:
             # Parse alerts
             hits = self.parser.extract_hit_records(alerts)
             matched_alerts = self.analyzer.analyze_alert(hits)
-            self.logger.info(f"Matched alerts: {matched_alerts}")
+            
+            # Handle notifications
+            if self.notifier:
+                for hit, rule in matched_alerts:
+                    for action in rule.get('rule_actions', []):
+                        if action.get('action') == 'email':
+                            self.notifier.send_alert_email(
+                                recipient=action.get('email'),
+                                template=action.get('template'),
+                                hit=hit,
+                                rule=rule
+                            )
 
             # Export the data to a file
             if self.export_file:

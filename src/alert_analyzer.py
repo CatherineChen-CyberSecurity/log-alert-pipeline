@@ -3,6 +3,7 @@ import logging
 import yaml
 import os
 from pathlib import Path
+import pandas as pd
 
 class AlertAnalyzer:
     def __init__(self, config_path: str = "config/alert_rule.yaml"):
@@ -109,15 +110,104 @@ class AlertAnalyzer:
         
         matched_alerts = []
         
-        for hit in hits:
-            for rule in self.rules:
-                if self._match_rule(hit, rule):
-                    matched_alerts.append((hit, rule))
-                    self.logger.debug(f"Hit matched rule {rule.get('rule_id', 'unknown')}: {rule.get('rule_name', 'unnamed')}")
-                    break  # Stop at first matching rule
+        # Segregate hits by rule type
+        for rule in self.rules:
+            if 'aggregation' in rule:
+                # This is an aggregation rule, process it separately
+                aggregation_alerts = self._evaluate_aggregation_rule(hits, rule)
+                matched_alerts.extend(aggregation_alerts)
+            else:
+                # This is a simple rule, process it hit by hit
+                for hit in hits:
+                    if self._match_rule(hit, rule):
+                        matched_alerts.append((hit, rule))
+                        self.logger.debug(f"Hit matched rule {rule.get('rule_id', 'unknown')}: {rule.get('rule_name', 'unnamed')}")
         
         self.logger.info(f"Found {len(matched_alerts)} matching alerts")
         return matched_alerts
+
+    def _evaluate_aggregation_rule(self, hits: List[Dict[str, Any]], rule: Dict[str, Any]) -> List[Tuple[Dict[str, Any], Dict[str, Any]]]:
+        """Evaluate an aggregation rule against a list of hits."""
+        agg_config = rule.get('aggregation', {})
+        time_window = agg_config.get('time_window')
+        group_by = agg_config.get('group_by')
+        unique_count_field = agg_config.get('unique_count_field')
+        threshold = agg_config.get('threshold')
+
+        if not all([time_window, group_by, unique_count_field, threshold]):
+            self.logger.warning(f"Invalid aggregation configuration in rule {rule.get('rule_id')}")
+            return []
+
+        # Filter hits that match the rule's base filter
+        filtered_hits = [h for h in hits if self._match_rule(h, rule)]
+        if not filtered_hits:
+            return []
+
+        # Create a DataFrame for easier analysis
+        df = pd.DataFrame([self._flatten_dict(h['_source']) for h in filtered_hits])
+        
+        # Ensure timestamp column exists and is in the correct format
+        if 'timestamp' not in df.columns:
+            self.logger.warning("Aggregation rule requires 'timestamp' field in data")
+            return []
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+        # Group by the specified field and apply time window logic
+        grouped = df.groupby(group_by)
+        
+        aggregated_alerts = []
+
+        for group_name, group_df in grouped:
+            group_df = group_df.sort_values(by='timestamp')
+            
+            # Use a rolling window to check for the condition
+            for i in range(len(group_df)):
+                end_time = group_df.iloc[i]['timestamp']
+                start_time = end_time - pd.Timedelta(seconds=time_window)
+                
+                window_df = group_df[(group_df['timestamp'] >= start_time) & (group_df['timestamp'] <= end_time)]
+                
+                unique_count = window_df[unique_count_field].nunique()
+                
+                if unique_count >= threshold:
+                    # Create a synthetic alert representing the aggregation
+                    first_hit_in_window = window_df.iloc[0]
+                    last_hit_in_window = window_df.iloc[-1]
+                    
+                    dest_ips = list(window_df['data.dest_ip'].unique())
+
+                    synthetic_alert = {
+                        'aggregation_summary': True,
+                        'rule_id': rule.get('rule_id'),
+                        'rule_name': rule.get('rule_name'),
+                        'start_time': str(start_time),
+                        'end_time': str(end_time),
+                        'group_key': group_name,
+                        'triggering_value': unique_count,
+                        'threshold': threshold,
+                        'dest_port_count': unique_count,
+                        'src_ip': self._get_nested_value(first_hit_in_window.to_dict(), 'data.src_ip'),
+                        'dest_ip': dest_ips,
+                    }
+                    aggregated_alerts.append((synthetic_alert, rule))
+                    
+                    # To avoid creating multiple alerts for the same ongoing scan, 
+                    # we could add more complex logic here to "snooze" this group.
+                    # For now, we break after the first trigger in this group for simplicity.
+                    break
+        
+        return aggregated_alerts
+
+    def _flatten_dict(self, d: Dict[str, Any], parent_key: str = '', sep: str ='.') -> Dict[str, Any]:
+        """Flatten a nested dictionary."""
+        items = []
+        for k, v in d.items():
+            new_key = parent_key + sep + k if parent_key else k
+            if isinstance(v, dict):
+                items.extend(self._flatten_dict(v, new_key, sep=sep).items())
+            else:
+                items.append((new_key, v))
+        return dict(items)
 
     def get_matched_alerts_by_rule(self, hits: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
         """
