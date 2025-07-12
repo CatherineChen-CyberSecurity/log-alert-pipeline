@@ -186,7 +186,7 @@ class AlertAnalyzer:
                         'triggering_value': unique_count,
                         'threshold': threshold,
                         'dest_port_count': unique_count,
-                        'src_ip': self._get_nested_value(first_hit_in_window.to_dict(), 'data.src_ip'),
+                        'src_ip': first_hit_in_window.to_dict().get('data.src_ip'),
                         'dest_ip': dest_ips,
                     }
                     aggregated_alerts.append((synthetic_alert, rule))
