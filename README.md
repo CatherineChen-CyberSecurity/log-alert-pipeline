@@ -5,6 +5,9 @@ This is an offline analysis program. The program pulls alert events every five m
 ## Project Structure
 The log-alert-pipeline project is organized into a clear and logical structure to promote maintainability and scalability. Below is an overview of the main directories and files:
 
+## Requirements
+- Python 3.13.3
+
 ## How to use
 ```
 # optional step, create a virtual environment
@@ -48,5 +51,4 @@ log-alert-pipeline/
 ├── .dockerignore                    # Docker ignore file
 ├── requirements.txt                 # Python package dependencies.
 └── README.md                        # Project overview documentation.
-```
 
