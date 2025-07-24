@@ -28,17 +28,22 @@ class EmailNotifier:
         except Exception:
             return None
 
-    def _replace_placeholders(self, template: str, data: Dict[str, Any]) -> str:
+    def _replace_placeholders(self, template: str, data: Dict[str, Any], context_data: Dict[str, Any]) -> str:
         """Replace placeholders like $(field_name) in the template."""
         
         def replacer(match):
             placeholder = match.group(1)
-            # For aggregated alerts, the data is already flat
-            if data.get('aggregation_summary'):
-                value = data.get(placeholder, f"$({placeholder})")
-            else:
-                # For regular hits, we need to extract from _source
-                value = self._get_nested_value(data.get('_source', {}), placeholder)
+
+            # Check in context_data first (e.g., for rule_id, rule_score)
+            value = context_data.get(placeholder)
+
+            if value is None:
+                # For aggregated alerts, the data is already flat
+                if data.get('aggregation_summary'):
+                    value = data.get(placeholder)
+                else:
+                    # For regular hits, we need to extract from _source
+                    value = self._get_nested_value(data.get('_source', {}), placeholder)
             
             if value is None:
                 return f"$({placeholder})" # Keep placeholder if value not found
@@ -50,8 +55,8 @@ class EmailNotifier:
     def send_alert_email(self, recipient: str, template: str, hit: Dict[str, Any], rule: Dict[str, Any]):
         subject = f"Security Alert: {rule.get('rule_name', 'Unnamed Rule')}"
         
-        # Replace placeholders in the template
-        body = self._replace_placeholders(template, hit)
+        # Replace placeholders in the template, passing rule data as context
+        body = self._replace_placeholders(template, hit, rule)
         
         msg = MIMEMultipart()
         msg['From'] = self.from_email

@@ -5,7 +5,7 @@ rules:
     rule_actions:
       - action: "email"
         email: "maggie.555x@gmail.com"
-        template: "Suspicious Scan Detected: $(src_ip) is scanning $(dest_ip). Hit $(dest_port_count) unique ports in the last 60 seconds."
+        template: "Suspicious Scan Detected: $(src_ip) is scanning $(dest_ip). Hit $(dest_port_count) unique ports in the last 60 seconds. Rule ID: $(rule_id), Rule Score: $(rule_score)."
     rule_score: 5
     filter:
       - field: "data.flow.reason"
