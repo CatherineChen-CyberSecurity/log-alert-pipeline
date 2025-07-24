@@ -1,8 +1,8 @@
 wazuh:
   host: "localhost"  # Replace with your Wazuh Indexer IP
   port: 9200
-  username: "admin"  # Replace with your username
-  password: "SecretPassword"  # Replace with your password
+  username: "changeme"  # Replace with your username
+  password: "changeme"  # Replace with your password
   
 scheduler:
   interval_minutes: 1
