@@ -132,7 +132,8 @@ class WazuhDataFetcher:
                 smtp_port=smtp_config.get('port'),
                 smtp_user=smtp_config.get('user'),
                 smtp_password=smtp_config.get('password'),
-                from_email=smtp_config.get('from_email')
+                from_email=smtp_config.get('from_email'),
+                config=self.config
             )
         return None
 
@@ -156,53 +157,63 @@ class WazuhDataFetcher:
             hits = self.parser.extract_hit_records(alerts)
             matched_alerts = self.analyzer.analyze_alert(hits)
             
-            # Handle notifications
-            if self.notifier:
-                for hit, rule in matched_alerts:
-                    for action in rule.get('rule_actions', []):
-                        if action.get('action') == 'email':
-                            self.notifier.send_alert_email(
-                                recipient=action.get('email'),
-                                template=action.get('template'),
-                                hit=hit,
-                                rule=rule
-                            )
-
-            # Export the data to a file
+            # Export the matched alerts to a file (CSV/JSON)
+            export_file_path = None
             if self.export_file:
-                self.export_matched_alerts(matched_alerts)
+                export_file_path = self.export_matched_alerts(matched_alerts)
+
+            # Send summary email with attached report
+            if self.notifier and matched_alerts:
+                self.notifier.send_summary_email(
+                    alerts=matched_alerts,
+                    report_file=export_file_path
+                )
         except Exception as e:
             self.logger.error(f"Error fetching alert IDs: {e}")
             print(f"Error: {e}")
 
-    def export_matched_alerts(self, matched_alerts: List[Tuple[Dict[str, Any], Dict[str, Any]]]):
+    def export_matched_alerts(self, matched_alerts: List[Tuple[Dict[str, Any], Dict[str, Any]]]) -> str:
         """
-        Export matched alerts to a file
+        Export matched alerts to a simplified CSV or JSON file.
         """
         output_dir = Path(self.export_file_path)
         output_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_path = output_dir / f"{timestamp}_{self.export_file_name}"
 
-        expanded_matched_alerts = []
-        for matched_alert in matched_alerts:
-            expanded_matched_alerts.append({
-                "alert_rule": matched_alert[1],
-                "raw_data": matched_alert[0]
-            })
+        simplified_alerts = []
+        for hit, rule in matched_alerts:
+            source = hit.get('_source', {})
+            data = source.get('data', {})
+            rule_meta = source.get('rule', {})
 
-        if self.export_file_name.endswith(".json"):
-            with open(file_path, 'w') as f:
-                json.dump(expanded_matched_alerts, f)
-        
+            simplified_alert = {
+                "Timestamp": source.get('@timestamp', ''),
+                "Rule ID": rule.get('rule_id', ''),
+                "Rule Name": rule.get('rule_name', ''),
+                "Src IP": data.get('src_ip', data.get('srcip', '')),
+                "Dest IP": data.get('dest_ip', ''),
+                "Dest Port": data.get('dest_port', ''),
+                "Src User": data.get('srcuser', ''),
+                "Dst User": data.get('dstuser', ''),
+                "Command": data.get('command', ''),
+                "Description": rule_meta.get('description', '')
+            }
+            simplified_alerts.append(simplified_alert)
+
         if self.export_file_name.endswith(".csv"):
+            with open(file_path, 'w', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=simplified_alerts[0].keys())
+                writer.writeheader()
+                writer.writerows(simplified_alerts)
+
+        elif self.export_file_name.endswith(".json"):
             with open(file_path, 'w') as f:
-                writer = csv.writer(f)
-                writer.writerow(["alert_rule", "raw_data"])
-                for matched_alert in expanded_matched_alerts:
-                    writer.writerow([matched_alert["alert_rule"], matched_alert["raw_data"]])
+                json.dump(simplified_alerts, f, indent=2)
 
         self.logger.info(f"Exported alerts to {file_path}")
+        return str(file_path)
+
 
     def start_scheduler(self):
         """

@@ -20,3 +20,84 @@ rules:
       group_by: "data.src_ip"
       unique_count_field: "data.dest_port"
       threshold: 5
+  - rule_id: 2
+    rule_name: "SYN Flood Detected"
+    rule_description: "Detects SYN Flood attacks reported by Suricata."
+    rule_actions:
+      - action: "email"
+        email: "catherine.chen.canadait@gmail.com"
+        template: "SYN Flood Detected: $(src_ip) targeted $(dest_ip):$(dest_port). Rule ID: $(rule_id), Rule Score: $(rule_score)."
+    rule_score: 4
+    filter:
+      - field: "data.alert.signature"
+        operator: "contains"
+        value: "Custom DOS Detection - SYN Flood Detected"
+  - rule_id: 3
+    rule_name: "ICMP Flood Detected"
+    rule_description: "Detects ICMP Flood attacks reported by Suricata."
+    rule_actions:
+      - action: "email"
+        email: "catherine.chen.canadait@gmail.com"
+        template: "ICMP Flood Detected: $(src_ip) targeted $(dest_ip). Rule ID: $(rule_id), Rule Score: $(rule_score)."
+    rule_score: 3
+    filter:
+      - field: "data.alert.signature"
+        operator: "contains"
+        value: "Custom ICMP Flood Detected"
+  - rule_id: 4
+    rule_name: "UDP Flood to DNS Port Detected"
+    rule_description: "Detects UDP Flood attacks targeting DNS ports reported by Suricata."
+    rule_actions:
+      - action: "email"
+        email: "catherine.chen.canadait@gmail.com"
+        template: "UDP Flood Detected: $(src_ip) targeted DNS port on $(dest_ip):$(dest_port). Rule ID: $(rule_id), Rule Score: $(rule_score)."
+    rule_score: 3
+    filter:
+      - field: "data.alert.signature"
+        operator: "contains"
+        value: "Custom UDP Flood to DNS Port Detected"
+  - rule_id: 5
+    rule_name: "SSH Authentication Failure Detected"
+    rule_description: "Detects multiple failed SSH authentication attempts, indicating a possible brute force attack."
+    rule_actions:
+      - action: "email"
+        email: "catherine.chen.canadait@gmail.com"
+        template: "SSH Authentication Failure Detected: $(srcip) failed login attempts for user '$(dstuser)'. Rule ID: $(rule_id), Rule Score: $(rule_score)."
+    rule_score: 7
+    filter:
+      - field: "decoder.name"
+        operator: "eq"
+        value: "sshd"
+      - field: "rule.description"
+        operator: "contains"
+        value: "User missed the password more than one time"
+  - rule_id: 6
+    rule_name: "Account Information Change Detected"
+    rule_description: "Detects changes to user account information which could indicate account manipulation."
+    rule_actions:
+      - action: "email"
+        email: "catherine.chen.canadait@gmail.com"
+        template: "Account Information Change Detected: User '$(dstuser)' information was modified. Rule ID: $(rule_id), Rule Score: $(rule_score)."
+    rule_score: 6
+    filter:
+      - field: "decoder.name"
+        operator: "eq"
+        value: "chfn"
+      - field: "rule.description"
+        operator: "contains"
+        value: "Information from the user was changed."
+  - rule_id: 7
+    rule_name: "Successful Sudo to Root Detected"
+    rule_description: "Detects when a user successfully escalates privileges to root using sudo."
+    rule_actions:
+      - action: "email"
+        email: "catherine.chen.canadait@gmail.com"
+        template: "Privilege Escalation Detected: User '$(srcuser)' executed command '$(command)' as root. Rule ID: $(rule_id), Rule Score: $(rule_score)."
+    rule_score: 7
+    filter:
+      - field: "decoder.name"
+        operator: "eq"
+        value: "sudo"
+      - field: "rule.description"
+        operator: "contains"
+        value: "Successful sudo to ROOT executed."
