@@ -56,4 +56,4 @@ log-alert-pipeline/
 ---
 
 ## Documentation
-- [Operation Manual (PDF)](docs/Operation-Manual.pdf)
+- [Operation Manual (PDF)](docs/Operation_Manual.pdf)
