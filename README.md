@@ -52,3 +52,6 @@ log-alert-pipeline/
 ├── requirements.txt                 # Python package dependencies.
 └── README.md                        # Project overview documentation.
 
+---
+## Documentation
+- [Operation Manual (PDF)](docs/Operation-Manual.pdf)
